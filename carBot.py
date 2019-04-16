@@ -11,25 +11,7 @@ bot.remove_command('help')
 
 @bot.command()
 async def ping(ctx):
-    await ctx.channel.send(f'My ping is {bot.latency}')
-
-
-@bot.command()
-async def babka(ctx):
-    await ctx.channel.send(f'My ping is {}')
-
-
-@bot.command()
-async def ban(ctx, member:discord.User = None, reason = None):
-    if member == None or member == ctx.message.author or member.name == 'Carrbot#5579':
-        await ctx.channel.send("You cannot ban yourself!")
-        return
-    if reason == None:
-        reason = "No reason at all!"
-    message = f"You have been banned from {ctx.guild.name} for {reason}!"
-    await member.send(message)
-    await ban()
-    await ctx.channel.send(f"{member} is banned!")
+    await ctx.channel.send(f'My ping is {bot.latency * 1000}')
 
 
 @bot.command()
