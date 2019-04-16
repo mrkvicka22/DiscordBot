@@ -11,7 +11,7 @@ bot.remove_command('help')
 
 @bot.command()
 async def ping(ctx):
-    await ctx.channel.send(f'My ping is {bot.latency * 1000}')
+    await ctx.channel.send(f'My ping is {bot.latency * 100}')
 
 
 @bot.command()
