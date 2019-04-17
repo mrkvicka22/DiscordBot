@@ -5,7 +5,7 @@ import time
 
 token = 'NTY0NDQxMjAzNTkzMDUyMTgw.XKttpA.hHp8b9GMYrsDmzYIXNoYLNRburw'
 
-bot = commands.Bot(command_prefix='!', status=discord.Status.idle, activity=discord.Game(name='Booting'))
+bot = commands.Bot(command_prefix='!', status=discord.Status.idle, activity=discord.Game(name='Ressurecting Hitler. Using TOP SECRET encryption. Victim not known.'))
 bot.remove_command('help')
 
 
