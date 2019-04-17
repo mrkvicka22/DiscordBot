@@ -15,13 +15,11 @@ class Shitler():
         
 @bot.command()
 async def ping(ctx):
-    await ctx.channel.send(f'My ping is {bot.latency * 1000}')
-
+    await ctx.channel.send(f'My ping is {bot.latency * 1000}’)
 
 @bot.command()
-async def channel(ctx, chaname):
-    await ctx.message.guild.create_text_channel(chaname)
-    await ctx.channel.send(f‘created server{chaname}’)
+async def channel(ctx):
+    await ctx.channel.send(f‘created server’)
 
 
 @bot.command()
