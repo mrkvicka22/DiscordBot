@@ -22,6 +22,8 @@ async def ping(ctx):
 
 @bot.command()
 async def shitler(ctx, *args):
+    guild = ctx.message.guild
+    await guild.create_text_channel('cool-channel')
     players = []
     for player in args:
         if isinstance(player, discord.User):
