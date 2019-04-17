@@ -22,7 +22,7 @@ async def ping(ctx):
 
 @bot.command()
 async def channel(ctx, chaname):
-    guild = ctx.guild
+    guild = ctx.message.guild
     await guild.create_text_channel(chaname)
 
 @bot.command()
