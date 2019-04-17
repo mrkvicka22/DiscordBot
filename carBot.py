@@ -6,6 +6,8 @@ import time
 token = 'NTY0NDQxMjAzNTkzMDUyMTgw.XKttpA.hHp8b9GMYrsDmzYIXNoYLNRburw'
 
 bot = commands.Bot(command_prefix='!', status=discord.Status.idle, activity=discord.Game(name='Ressurecting Hitler. Using TOP SECRET encryption. Victim not known.'))
+bot.remove_command('help')
+
 
 class Shitler():
 
@@ -15,11 +17,7 @@ class Shitler():
         
 @bot.command()
 async def ping(ctx):
-    await ctx.channel.send(f”My ping is {bot.latency * 1000}”)
-
-@bot.command()
-async def channel(ctx):
-    await ctx.channel.send(f‘created server’)
+    await ctx.channel.send(f'My ping is {bot.latency * 1000}')
 
 
 @bot.command()
