@@ -6,8 +6,6 @@ import time
 token = 'NTY0NDQxMjAzNTkzMDUyMTgw.XKttpA.hHp8b9GMYrsDmzYIXNoYLNRburw'
 
 bot = commands.Bot(command_prefix='!', status=discord.Status.idle, activity=discord.Game(name='Ressurecting Hitler. Using TOP SECRET encryption. Victim not known.'))
-bot.remove_command('help')
-
 
 class Shitler():
 
@@ -24,7 +22,7 @@ async def ping(ctx):
 async def channel(ctx, chaname):
     guild = ctx.message.guild
     await guild.create_text_channel(chaname)
-
+    await ctx.channel.send(f‘created server{chaname}’
 @bot.command()
 async def shitler(ctx, *args):
     players = []
