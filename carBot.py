@@ -9,9 +9,26 @@ bot = commands.Bot(command_prefix='!', status=discord.Status.idle, activity=disc
 bot.remove_command('help')
 
 
+class Shitler():
+
+    def __init__(self, participants):
+        self.players = participants
+        
+        
 @bot.command()
 async def ping(ctx):
-    await ctx.channel.send(f'My ping is {bot.latency * 1000}ms')
+    await ctx.channel.send(f'My ping is {bot.latency * 1000}')
+
+
+@bot.command()
+async def shitler(ctx, *args):
+    players = []
+    for player in args:
+        if isinstance(player, discord.User):
+            players.append(a)
+
+    shitler_game = Shitler(players)
+    await ctx.channel.send(f'My ping is {bot.latency * 1000}')
 
 
 @bot.command()
