@@ -15,7 +15,7 @@ class Shitler():
         
 @bot.command()
 async def ping(ctx):
-    await ctx.channel.send(f'My ping is {bot.latency * 1000}’)
+    await ctx.channel.send(f”My ping is {bot.latency * 1000}”)
 
 @bot.command()
 async def channel(ctx):
