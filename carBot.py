@@ -8,8 +8,6 @@ token = 'NTY0NDQxMjAzNTkzMDUyMTgw.XKttpA.hHp8b9GMYrsDmzYIXNoYLNRburw'
 bot = commands.Bot(command_prefix='!', status=discord.Status.idle, activity=discord.Game(name='Booting'))
 bot.remove_command('help')
 
-game_is_ongoing = False
-
 roles = {5:['liberal', 'liberal', 'liberal', 'hitler', 'facist'],
          6:['liberal', 'liberal', 'liberal', 'liberal','hitler','facist'],
          7:['liberal', 'liberal', 'liberal', 'liberal', 'hitler', 'facist', 'facist'],
@@ -49,18 +47,22 @@ async def shitlerstart(ctx):
 @bot.command()
 async def shitlerjoin(ctx):
     player_list.append(ctx.message.author)
+    await ctx.channel.send(f'Player {ctx.message.author} has joined the game')
+
+in_progress = False
 
 
 @bot.command()
 async def shitlercreate(ctx):
-    global game_is_ongoing
-    if game_is_ongoing:
+    global in_progress
+    if in_progress:
         await ctx.channel.send('The game is already in progress wait for it to finish!')
         return 0
-
-    global player_list
-    player_list = []
-    game_is_ongoing = True
+    else:
+        global player_list
+        player_list = []
+        in_progress = False
+        await ctx.channel.send('The game created waiting for players to join')
 
 
 @bot.command()
