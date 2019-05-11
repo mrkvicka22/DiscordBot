@@ -120,7 +120,6 @@ async def on_message(message):
                 await clovek.remove_roles(role_playing)
             if role_creator in clovek.roles:
                 await clovek.remove_roles(role_creator)
-        await message.author.add_roles(role_creator)
         
         if running == False:
             for x in hraci:
@@ -128,6 +127,7 @@ async def on_message(message):
             public_channel=message.channel
             running = True
             await message.author.add_roles(role_playing)
+            await message.author.add_roles(role_creator)
             await message.channel.send(message.author.name + " just created a game in this channel. Everyone can now join it!")
             hraci.append(message.author.name.lower())
         else:
@@ -156,11 +156,13 @@ async def on_message(message):
             running = False
         for clovek in message.guild.members:
             if role_playing in clovek.roles:
-                await message.author.remove_roles(role_playing)
+                await clovek.remove_roles(role_playing)
             if role_creator in clovek.roles:
-                await message.author.remove_roles(role_creator)
+                await clovek.remove_roles(role_creator)
 
     elif message.content == "$fill":
+        if message.author.name != 'MvKal':
+            return
         await message.author.send("Filled for you with dummies")
         dummici = ['a', 'b', 'c', 'd', 'e']
         for i in range(len(hraci), 5):
@@ -196,28 +198,27 @@ async def on_message(message):
         await message.channel.send("hehe ask real kalab if you are that noob-ish")
 
     else:
-        to_send=message.content[1:]
-        print("putujem " + to_send + message.author.name.lower())
-        await commands.put((to_send, message.author.name.lower()))
+        if not game_in_progress:
+            await message.channel.send("Sorry, I am now unable to commit " + message.content[1:])
+        else:
+            to_send=message.content[1:]
+            print("putujem " + to_send + message.author.name.lower())
+            await commands.put((to_send, message.author.name.lower()))
 
 
 '''
 TODO: 
 oprotisediaci
-separate prezident a kancelar role
-help
-kto hra
-kolko joinnutych
+
 
 '''
 
     
 async def give_role(player, role):
-    for channel in kanale:
-        if channel==TextChannel:
-            for clovek in channel.members:
-                if clovek.name.lower == player:
-                    clovek.add_roles(role)
+    for srver in client.guilds:
+        for clovek in srver.members:
+            if clovek.name.lower == player:
+                clovek.add_roles(role)
 
 async def send(recepient, content, *texty):
     global public_channel
@@ -598,20 +599,17 @@ async def sendInformation(fascistNumber, hitler, fascists):
             print("weird.. nic")
         i+=1
 
-async def getvote(player):
+async def getvote():
     global hlasy
 
-    while True:
-        input = await commands.get()
-        if input[1]==player:
-            break
-        await asyncio.sleep(1)
+    input = await commands.get()
+
     ans=input[0]
-    if not ans[1] in hlasy and ans[1] in players:
+    if (not ans[1] in hlasy) and (ans[1] in players):
         hlasy.append(ans[1])
         if(ans == 'ja'):
             return 1
-        else:
+        elif (ans == 'nein'):
             return 2
 
 async def voting(players, president, chancellor):
@@ -620,17 +618,29 @@ async def voting(players, president, chancellor):
 
     global lastPresident
     global lastChancellor
+    resulty = []
     for i in hlasy:
         hlasy.pop(0)
     ja, nein = 0, 0
     for i, p in enumerate(players):
         print(p, 'Do you agree with goverment where the president would be ', president, 'and the chancellor would be', chancellor)
         await send(p, 'Do you agree with goverment where the president would be ', president, 'and the chancellor would be', chancellor)
-        result = await getvote(p)
+
+    for p in players:
+        resulty.append(await getvote())
+
+    while len(resulty)<len(players):
+        await sleep(1)
+
+    for i in enumerate(players):
         if result == 1:
             ja += 1
         else:
             nein += 1
+        print("Ja: " + str(ja) + ", Nein: " + str(nein))
+        print("hlasovali: ")
+        print(hlasy)
+
     if(ja > nein):
         lastVoting = True
         return True
@@ -651,7 +661,7 @@ async def choseChancellor(players, president, lastPresident, lastChancellor):
             if input[1]==president:
                 break
             else:
-                send("Everyone", "Only president can choose his chancellor")
+                await send("Everyone", "Only president can choose his chancellor")
                 print("zly_clovek")
             await asyncio.sleep(1)
             
@@ -734,7 +744,7 @@ def kill(players, roles, hitler, name):
 
 
 
-client.run("NTY3NjgxMDk5NjMxNjg5NzI4.XLXESg.uUmuvWel18Wg7v3gB_IXvwBrUEg")
+client.run("")
 
 
 '''    if existuje_kanal==False:
