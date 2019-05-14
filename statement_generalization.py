@@ -1,5 +1,5 @@
 import copy
-
+import pyperclip
 
 class Statement:
 	def __init__(self, ptype, which_text = -1, additional_text = -1): 
@@ -174,13 +174,22 @@ def main():
 	global base  
 	base = Statement("start", 0, 1)
 	optcode = []
-  print("Enter optional code, otherwise just enter")
+	print("Enter optional code, otherwise just enter")
 	optcode = list(map(int, input().split()))
 	create_statement_for(base, optcode)
-	print(print_state())
+	print("Final text reads: " + print_state())
 	print("Code is:")
-	print(*base.give_code())
+	supercode = base.give_code()
+	print(*supercode)
+	print(supercode)
+	
+	supercode = ' '.join([str(i) for i in supercode])
+	pyperclip.copy(supercode)
 
 
 
 main()
+
+
+
+
