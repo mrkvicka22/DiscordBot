@@ -1,0 +1,62 @@
+fascist and lib networks are trained differently
+different networks for fascists, and libs
+every player these vars:
+fascistism = [players - 1]    -1 = absolute lib, 1 = absolute fas, start on 0
+hitlerism = [players - 1]     -1 CNH, 1 = H
+
+
+objective and public ones:
+bool was_fas_pres, chancc, lib pres, lib chancc, 0/1
+bool is_pres, is_chancc
+fas_laws =                    	0-1, 0 means 0 fas laws, 1/6 = 1 fas law
+lib_laws =                    	0-1 0 means 0 lib laws, 1/5 = 1 lib law
+TD in 							0.33 per neined gov
+is it HZ						0/1
+
+event handlers
+role_reveal - fascists only - sets fascistism and hitlerism to according values
+
+statement_said -	out: personal variables
+					inp: bool list, 1 for the one that said that
+					personal variables
+					public variables
+					statement-	2 for "should" or "should not", both 	0/1
+								player mentioned		0/1
+								one of possible roles 	0/1
+								optional player mentioned in action all 0/1
+								optional statement is or is not 0/1
+									player in second 	0/1
+									possible roles 	0/1 
+									optional player if action 	0/1
+
+elect chancellor -	out: list of how good chancss they are
+					inp: personal, public except current gov ones
+					
+
+inv - 				out: list of 0-1 how he wants to action
+					inp: personal, public
+					
+shoot, special elect - same as inv
+
+vote - 				out: -1=nein, 1=ja
+					inp: personal, public
+
+after inv -			out: claim -1 fas, 1 lib, what is closer
+					inp: list of players - role of investigated, personal, public
+					
+after gov - 		out: claim -1 fas, 1 lib, what is closer
+					inp: personal, public
+say something -		out: statement, same as in statement_said + wants to say this 1/-1
+					inp: personal, public
+create evolution system HERE:
+
+
+rewarding:
+	win + 10
+	lose -10
+	lie - 1
+	truth +0.5
+	unspecified * 0.25 * win (-1/1)
+	died - 5
+	shot correctly + 2
+	was in gov + 1
