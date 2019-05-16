@@ -32,7 +32,8 @@ statement_said -	out: personal variables
 elect chancellor -	out: list of how good chancss they are
 					inp: personal, public except current gov ones
 					
-
+choose discard - 	out: closer to -1 or 1 is discarded
+			inp: 3 -1/1s representing laws. 0 means ur chancc, personal public
 inv - 				out: list of 0-1 how he wants to action
 					inp: personal, public
 					
@@ -60,3 +61,4 @@ rewarding:
 	died - 5
 	shot correctly + 2
 	was in gov + 1
+	illegal action -3
