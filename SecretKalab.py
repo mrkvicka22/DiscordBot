@@ -40,10 +40,12 @@ class ai_player:
 
 		self.party = party
 		if self.party == "liberal":
-			self.fascistism = [0, 0, 0, 0, 0]
-			self.hitler = [0, 0, 0, 0, 0]
-			self.vote_suggestion = 0
-			self.action = [0, 0, 0, 0, 0]
+			personal = {
+			fascistism: [0, 0, 0, 0, 0],
+			hitlerism: [0, 0, 0, 0, 0],
+			vote_suggestion: 0,
+			action: [0, 0, 0, 0, 0]
+			}
 		self.networks = {
 		"vote":
 			tf.keras.Sequential([
@@ -73,7 +75,12 @@ class ai_player:
 				weights.append(w)
 		print(weights)
 		for x in range(0, random.randrange(0, len(weights)*amp)):
-			weights[randrange(0, len(weights))] = weights[randrange(0, len(weights))] - 0.001 + 0.001 * (random.randrange(0, 2000)/1000)
+			weights[random.randrange(0, len(weights))] = weights[random.randrange(0, len(weights))] - 0.001 + 0.001 * (random.randrange(0, 2000)/1000)
+
+
+	def give_answer(self, event_type):
+		if event_type == "chancellor_choose":
+			input = self.personal + public_channel
 
 
 def refresh_kanalov():
@@ -376,15 +383,20 @@ async def send(recepient, content, *texty):
 		print("chudak je bez channelu")
 
 ########################################################################################################################################################
-async def vstup(authorized):
-	while True:
-		input = await commands.get()
-		print("nacital som " + input[0])
-		if input[1]==authorized or input[1] == "mvkal":
-			break
-	inp=input[0]
-	print(inp)
-	return inp
+async def vstup(authorized, call_type = None):
+	global ai_players
+	if runtype=="discord":
+		while True:
+			input = await commands.get()
+			print("nacital som " + input[0])
+			if input[1]==authorized or input[1] == "mvkal":
+				break
+		inp=input[0]
+		print(inp)
+		return inp
+	elif runtype=="ai_train":
+		ai_players[players.index(authorized)].networks[call_type].give_answer(call_type)
+		
 
 async def play(gamers):
 	global players
@@ -531,7 +543,7 @@ async def play(gamers):
 								await send(president, 'Type the name of player, you want to kill.')
 								inp = await vstup(president)
 								if(inp in players and not (inp == president)):
-									x = Falsel
+									x = False
 								if(inp == lastPresident):
 									lastPresident = 0
 								elif(inp == lastChancellor):
@@ -903,6 +915,7 @@ async def train():
 				del fas_players[x]
 			random.shuffle(ai_players)
 			players = [str(ai) for ai in ai_players]
+			print(players)
 			asyncio.wait_for(await play(players))
 		lib_players = used_lib_ai
 		fas_players = used_fas_ai
@@ -923,7 +936,7 @@ async def train():
 
 
 if runtype == "discord":
-	client.run("")
+	client.run()
 elif runtype == "ai_train":
 	loop = asyncio.get_event_loop()
 	loop.run_until_complete(train())
