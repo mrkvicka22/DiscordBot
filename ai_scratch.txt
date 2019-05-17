@@ -1,12 +1,13 @@
 fascist and lib networks are trained differently
 different networks for fascists, and libs
 every player these vars:
-fascistism = [players - 1]    -1 = absolute lib, 1 = absolute fas, start on 0
-hitlerism = [players - 1]     -1 CNH, 1 = H
-
+fascistism = [players - 1]    	-1 = absolute lib, 1 = absolute fas, start on 0
+hitlerism = [players - 1]     	-1 CNH, 1 = H
+should vote			-1 nein, 1 ja
+who should i pick/action	bool for each player
 
 objective and public ones:
-bool was_fas_pres, chancc, lib pres, lib chancc, 0/1
+only for statements :bool was_fas_pres, chancc, lib pres, lib chancc, 0/1
 bool is_pres, is_chancc
 fas_laws =                    	0-1, 0 means 0 fas laws, 1/6 = 1 fas law
 lib_laws =                    	0-1 0 means 0 lib laws, 1/5 = 1 lib law
@@ -62,3 +63,4 @@ rewarding:
 	shot correctly + 2
 	was in gov + 1
 	illegal action -3
+	if lib discards lib law, it is illegal
