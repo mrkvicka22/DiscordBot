@@ -4,7 +4,8 @@ import queue
 import asyncio
 import copy
 import pyperclip
-import tensorflow
+import tensorflow as tf
+from tensorflow import keras
 import sys
 import _pickle as pickle
 sys.path.append("D:\personal\matko\programovanie")
@@ -15,6 +16,7 @@ hraci = []
 roles = []
 players = []
 hlasy = []
+ai_players = []
 creator=discord.member
 running = False
 commands = asyncio.Queue()
@@ -29,12 +31,12 @@ role_creator = discord.Role
 history = []		
 turnhiskeys = ['president', 'chancellor', 'voting laws', 'president discarded', 'chancellor discarded']		
 turnhis = []
-runtype = "discord"
+runtype = "ai_train"
 
-
-class ai_player(party):
+print("importing done")
+class ai_player:
 	
-	def __init__(self):
+	def __init__(self, party):
 
 		self.party = party
 		if self.party == "liberal":
@@ -42,15 +44,15 @@ class ai_player(party):
 			self.hitler = [0, 0, 0, 0, 0]
 			self.vote_suggestion = 0
 			self.action = [0, 0, 0, 0, 0]
-		networks = {
-		self.vote:
+		self.networks = {
+		"vote":
 			tf.keras.Sequential([
 			keras.layers.Dense(11+14, activation = tf.nn.sigmoid), 
 			keras.layers.Dense(11+14, activation = tf.nn.sigmoid),
 			keras.layers.Dense(1, activation = tf.nn.softmax)
 		]),
-		self.chancellor_choose:
-			tensorflow.keras.Sequential([
+		"chancellor_choose":
+			tf.keras.Sequential([
 			keras.layers.Dense(15+4, activation = tf.nn.sigmoid),
 			keras.layers.Dense(15+4, activation = tf.nn.sigmoid),
 			keras.layers.Dense(5, activation = tf.nn.sigmoid)
@@ -60,11 +62,18 @@ class ai_player(party):
 
 
 
-		for network in temp.networks:
-			for w in network.weights:
+		for network in self.networks:
+			for w in self.networks[network].weights:
 				w = random.randrange(-1000000, 1000001)/1000000
-		
-			
+
+	def mutate(self, amp):
+		weights = []
+		for network in self.networks:
+			for w in self.networks[network].weights:
+				weights.append(w)
+		print(weights)
+		for x in range(0, random.randrange(0, len(weights)*amp)):
+			weights[randrange(0, len(weights))] = weights[randrange(0, len(weights))] - 0.001 + 0.001 * (random.randrange(0, 2000)/1000)
 
 
 def refresh_kanalov():
@@ -383,6 +392,7 @@ async def play(gamers):
 	global chancellor
 	global lastPresident
 	global lastChancellor
+	global ai_players
 	players = gamers
 	print("hrac 1 je : " + str(players[0]))
 	l = ()
@@ -847,28 +857,74 @@ def kill(players, roles, hitler, name):
 	return players, roles, hitler == name
 
 
-
-
-if runtype == "discord":
-	client.run()
-elif runtype == "ai_train":
+async def train():
 	lib_players = []
 	fas_players = []
+	randmax = 100000
 	generation_size_coef = 5
 	generations_planned = 20
+	mutation_chance = 0.2
+	mutation_amplificator = 0.00001
+	
 	try:
 		with open('liberal_ai', 'rb') as input:
 			lib_players = pickle.load(input)
+	except FileNotFoundError:
+		print("no libfiles found")
 	try:
 		with open('fascist_ai', 'rb') as input:
 			fas_players = pickle.load(input)
-	
-	for generation in range(0, generation_size_coef * 3 - len(lib_players)):
+	except FileNotFoundError:
+		print("no fasfiles found")
+
+	l = len(lib_players)
+	for generation in range(0, generation_size_coef * 3 - l):
 		lib_players.append(ai_player("liberal"))
-	for generation in range(0, generation_size_coef * 2 - len(fas_players)):
+	l = len(fas_players)
+	for generation in range(0, generation_size_coef * 2 - l):
 		fas_players.append(ai_player("fascist"))
 
 
 
 	for generation in range(0,generations_planned):
-		
+		rulette = []
+		used_lib_ai = []
+		used_fas_ai = []
+		for cycle in range(generation_size_coef):
+			for libs in range(0, 3):
+				x = random.randrange(0, len(lib_players))
+				ai_players.append(lib_players[x])
+				used_lib_ai.append(lib_players[x])
+				del lib_players[x]
+			for fascists in range(0, 2):
+				x = random.randrange(0, len(fas_players))
+				ai_players.append(fas_players[x])
+				used_fas_ai.append(fas_players[x])
+				del fas_players[x]
+			random.shuffle(ai_players)
+			players = [str(ai) for ai in ai_players]
+			asyncio.wait_for(await play(players))
+		lib_players = used_lib_ai
+		fas_players = used_fas_ai
+		addition = min([player.fitness for player in lib_players])
+		if addition >= 1:
+			addition = 0
+		else:
+			addition = addition *-1 +1
+		for z, plai in enumerate(lib_players):
+			for fit in range(0, plai.fitness+addition):
+				rulette.append(z)
+		lib_players = []
+		for pl in range(0, len(used_lib_ai)):
+			lib_players.append(used_lib_ai[rulette[random.randrange(0, len(rulette))]])
+			dice = random.randrange(0, randmax)/randmax
+			if randmax * mutation_chance < dice:
+				lib_players.mutate(mutation_amplificator)
+
+
+if runtype == "discord":
+	client.run("")
+elif runtype == "ai_train":
+	loop = asyncio.get_event_loop()
+	loop.run_until_complete(train())
+	
