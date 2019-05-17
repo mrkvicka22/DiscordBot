@@ -6,6 +6,7 @@ import copy
 import pyperclip
 import tensorflow
 import sys
+import _pickle as pickle
 sys.path.append("D:\personal\matko\programovanie")
 import statement as st
 client = discord.Client()
@@ -32,7 +33,7 @@ runtype = "discord"
 
 
 class ai_player(party):
-
+	
 	def __init__(self):
 
 		self.party = party
@@ -41,16 +42,27 @@ class ai_player(party):
 			self.hitler = [0, 0, 0, 0, 0]
 			self.vote_suggestion = 0
 			self.action = [0, 0, 0, 0, 0]
-		self.vote = tf.keras.Sequential([
+		networks = {
+		self.vote:
+			tf.keras.Sequential([
 			keras.layers.Dense(11+14, activation = tf.nn.sigmoid), 
 			keras.layers.Dense(11+14, activation = tf.nn.sigmoid),
 			keras.layers.Dense(1, activation = tf.nn.softmax)
-		])
-		self.chancellor_choose = tensorflow.keras.Sequential([
+		]),
+		self.chancellor_choose:
+			tensorflow.keras.Sequential([
 			keras.layers.Dense(15+4, activation = tf.nn.sigmoid),
 			keras.layers.Dense(15+4, activation = tf.nn.sigmoid),
 			keras.layers.Dense(5, activation = tf.nn.sigmoid)
 		])
+		}
+
+
+
+
+		for network in temp.networks:
+			for w in network.weights:
+				w = random.randrange(-1000000, 1000001)/1000000
 		
 			
 
@@ -838,8 +850,25 @@ def kill(players, roles, hitler, name):
 
 
 if runtype == "discord":
-	client.run("")
+	client.run()
 elif runtype == "ai_train":
+	lib_players = []
+	fas_players = []
+	generation_size_coef = 5
+	generations_planned = 20
+	try:
+		with open('liberal_ai', 'rb') as input:
+			lib_players = pickle.load(input)
+	try:
+		with open('fascist_ai', 'rb') as input:
+			fas_players = pickle.load(input)
 	
-	for generation in range(0, 5):
-		i=0
+	for generation in range(0, generation_size_coef * 3 - len(lib_players)):
+		lib_players.append(ai_player("liberal"))
+	for generation in range(0, generation_size_coef * 2 - len(fas_players)):
+		fas_players.append(ai_player("fascist"))
+
+
+
+	for generation in range(0,generations_planned):
+		
