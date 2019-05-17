@@ -4,6 +4,7 @@ import queue
 import asyncio
 import copy
 import pyperclip
+import tensorflow
 import sys
 sys.path.append("D:\personal\matko\programovanie")
 import statement as st
@@ -27,6 +28,33 @@ role_creator = discord.Role
 history = []		
 turnhiskeys = ['president', 'chancellor', 'voting laws', 'president discarded', 'chancellor discarded']		
 turnhis = []
+runtype = "discord"
+
+
+class ai_player(party):
+
+	def __init__(self):
+
+		self.party = party
+		if self.party == "liberal":
+			self.fascistism = [0, 0, 0, 0, 0]
+			self.hitler = [0, 0, 0, 0, 0]
+			self.vote_suggestion = 0
+			self.action = [0, 0, 0, 0, 0]
+		self.vote = tf.keras.Sequential([
+			keras.layers.Dense(11+14, activation = tf.nn.sigmoid), 
+			keras.layers.Dense(11+14, activation = tf.nn.sigmoid),
+			keras.layers.Dense(1, activation = tf.nn.softmax)
+		])
+		self.chancellor_choose = tensorflow.keras.Sequential([
+			keras.layers.Dense(15+4, activation = tf.nn.sigmoid),
+			keras.layers.Dense(15+4, activation = tf.nn.sigmoid),
+			keras.layers.Dense(5, activation = tf.nn.sigmoid)
+		])
+		
+			
+
+
 def refresh_kanalov():
 	global role_playing
 	print("refresh")
@@ -86,7 +114,7 @@ async def on_message(message):
 	for channel in kanale:
 		if channel.name == message.author.name.lower():
 			existuje_kanal = True
-			channel.purge()
+			await channel.purge()
 			break
 	if not existuje_kanal:
 #		await message.channel.send(message.author.name + ", you don't have private channel with me, named " + message.author.name.lower() + 
@@ -385,10 +413,10 @@ async def play(gamers):
 			for i in range(len(discard)):
 				l = l + (discard.pop(),)
 			l = shuffle(l)
-		president, chancellor, chaos = await choseGovernment(president, players, lastPresident, lastChancellor,)
-		#pridavam prezidenta a kancla do turn history
-	        turnhis.append(president)
-	        turnhis.append(chancellor)
+			president, chancellor, chaos = await choseGovernment(president, players, lastPresident, lastChancellor,)
+			#pridavam prezidenta a kancla do turn history	
+			turnhis.append(president)
+			turnhis.append(chancellor)
 		if(await check(lib, fas, chancellor, roles, players, hitler)):
 			end = True
 			break
@@ -415,9 +443,9 @@ async def play(gamers):
 						send(president, "This was not a number")
 						print("This was not a number")
 					if(inp > 0 and inp < 4):
-					presdisc = votingLaws[inp - 1]
-	                        	discard.append(presdisc)
-	                        	turnhis.append(votingLaws)
+						presdisc = votingLaws[inp - 1]
+						discard.append(presdisc)
+						turnhis.append(votingLaws)
 
 						discard.append(votingLaws[inp - 1])
 						votingLaws = votingLaws[:inp-1] + votingLaws[inp:]
@@ -809,19 +837,9 @@ def kill(players, roles, hitler, name):
 
 
 
-
-client.run("")
-
-
-'''	if existuje_kanal==False:
-		print(server)
-		over ={
-		discord.Guild.default_role: discord.PermissionOverwrite(read_messages=True),
-		discord.Guild.me: discord.PermissionOverwrite(read_messages=True)
-		}
-		novy = discord.abc.GuildChannel()
-		await server.create_text_channel(server, "mvkal", overwrites = over, category="sukromne")
-		kanale.append(novy)
-#		await kanale[len(kanale)-1].send(None)
-#		await kanale[len(kanale)-1].send("i WORK")
-		print(kanale[len(kanale)-1])'''
+if runtype == "discord":
+	client.run("")
+elif runtype == "ai_train":
+	
+	for generation in range(0, 5):
+		i=0
