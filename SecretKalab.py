@@ -10,6 +10,7 @@ import sys
 import _pickle as pickle
 sys.path.append("D:\personal\matko\programovanie")
 import statement as st
+import numpy as np
 client = discord.Client()
 kanale = []
 hraci = []
@@ -35,50 +36,58 @@ turnhis = []
 runtype = "ai_train"
 
 print("importing done")
+
+
+
+
+public = np.zeros(24)	#5-isPresident, isChancellor, lastPresident, lastChancellor 
+						#1-fas_laws, lib_laws, TD in x, isHZ
 class AI_player:
 
-    def __init__(self, party):
-        self.public_inputs = np.zeros(24)
-        self.personal_inputs = np.zeros(32)
-
-        self.party = party
-        self.networks = {
-            "vote":
-                keras.Sequential([
-                    keras.layers.Dense(len(self.personal_inputs) + len(self.public_inputs), activation=tf.nn.tanh),
-                    keras.layers.Dense(len(self.personal_inputs) + len(self.public_inputs, activation=tf.nn.tanh),
-                    keras.layers.Dense(2, activation=tf.nn.softmax)
-                ]),
-            "chancellor_choose":
-                keras.Sequential([
-                    keras.layers.Dense(len(self.personal_inputs) + len(self.public_inputs), activation=tf.nn.tanh),
-                    keras.layers.Dense(len(self.personal_inputs) + len(self.public_inputs), activation=tf.nn.tanh),
-                    keras.layers.Dense(4, activation=tf.nn.softmax)
-                ]),
-            "gunpoint":
-                keras.Sequential([
-                    keras.layers.Dense(len(self.personal_inputs) + len(self.public_inputs), activation=tf.nn.tanh),
-                    keras.layers.Dense(len(self.personal_inputs) + len(self.public_inputs, activation=tf.nn.tanh),
-                    keras.layers.Dense(4, activation=tf.nn.softmax)
-                ]),
-            "lib passing laws":
-                keras.Sequential([
-                    keras.layers.Dense(3 + len(self.public_inputs), activation=tf.nn.tanh),
-                    keras.layers.Dense(8, activation=tf.nn.tanh),
-                    keras.layers.Dense(1, activation=tf.nn.softmax)
-                ]),
-            "investigate":
-                keras.Sequential([
-                    keras.layers.Dense(len(self.personal_inputs) + len(self.public_inputs), activation=tf.nn.tanh),
-                    keras.layers.Dense(len(self.personal_inputs) + len(self.public_inputs, activation=tf.nn.tanh),
-                    keras.layers.Dense(4, activation=tf.nn.softmax)
-                ]),
-            "investigate claim":
-                keras.Sequential([
-                    keras.layers.Dense(len(self.personal_inputs) + len(self.public_inputs) + 1, activation=tf.nn.tanh),
-                    keras.layers.Dense(10, activation=tf.nn.tanh),
-                    keras.layers.Dense(2, activation=tf.nn.softmax)
-        };
+	global public
+	def __init__(self, party):
+		public = np.zeros(24)
+		self.personal_inputs = np.zeros(32)
+		self.fitness = 0
+		self.party = party
+		self.networks = {
+			"vote":
+				keras.Sequential([
+					keras.layers.Dense(len(self.personal_inputs) + len(public), activation=tf.nn.tanh),
+					keras.layers.Dense(len(self.personal_inputs) + len(public), activation=tf.nn.tanh),
+					keras.layers.Dense(2, activation=tf.nn.softmax)
+				]),
+			"choose_chancellor":
+				keras.Sequential([
+					keras.layers.Dense(len(self.personal_inputs) + len(public), activation=tf.nn.tanh),
+					keras.layers.Dense(len(self.personal_inputs) + len(public), activation=tf.nn.tanh),
+					keras.layers.Dense(4, activation=tf.nn.softmax)
+				]),
+			"gunpoint":
+				keras.Sequential([
+					keras.layers.Dense(len(self.personal_inputs) + len(public), activation=tf.nn.tanh),
+					keras.layers.Dense(len(self.personal_inputs) + len(public), activation=tf.nn.tanh),
+					keras.layers.Dense(4, activation=tf.nn.softmax)
+				]),
+			"lib passing laws":
+				keras.Sequential([
+					keras.layers.Dense(3 + len(public), activation=tf.nn.tanh),
+					keras.layers.Dense(8, activation=tf.nn.tanh),
+					keras.layers.Dense(1, activation=tf.nn.softmax)
+				]),
+			"investigate":
+				keras.Sequential([
+					keras.layers.Dense(len(self.personal_inputs) + len(public), activation=tf.nn.tanh),
+					keras.layers.Dense(len(self.personal_inputs) + len(public), activation=tf.nn.tanh),
+					keras.layers.Dense(4, activation=tf.nn.softmax)
+				]),
+			"investigate claim":
+				keras.Sequential([
+					keras.layers.Dense(len(self.personal_inputs) + len(public) + 1, activation=tf.nn.tanh),
+					keras.layers.Dense(10, activation=tf.nn.tanh),
+					keras.layers.Dense(2, activation=tf.nn.softmax)
+				])
+		};
 
 
 
@@ -97,9 +106,8 @@ class AI_player:
 			weights[random.randrange(0, len(weights))] = weights[random.randrange(0, len(weights))] - 0.001 + 0.001 * (random.randrange(0, 2000)/1000)
 
 
-	def give_answer(self, event_type):
-		if event_type == "chancellor_choose":
-			input = self.personal + public_channel
+	def give_answer(self, event_type, optinputs = np.array([])):
+		return self.networks[event_type].predict( np.concatenate((self.personal_inputs, public, optinputs), axis = None))
 
 
 def refresh_kanalov():
@@ -385,6 +393,14 @@ async def give_role(player, role):
 			if clovek.name.lower == player:
 				clovek.add_roles(role)
 
+def set_public(group, index):
+	global players
+	global public
+	for i in range(0, len(players)):
+		public[i+len(players)*group]=0
+		if i == index:
+			public[i+len(players)*group]=1
+
 async def send(recepient, content, *texty):
 	global public_channel
 	if runtype == "discord":
@@ -405,7 +421,7 @@ async def send(recepient, content, *texty):
 #		if 
 
 ########################################################################################################################################################
-async def vstup(authorized, call_type = None, inputs = []):
+async def vstup(authorized, call_type = None, inputs = np.array([])):
 	global ai_players
 	if runtype=="discord":
 		while True:
@@ -417,7 +433,7 @@ async def vstup(authorized, call_type = None, inputs = []):
 		print(inp)
 		return inp
 	elif runtype=="ai_train":
-		ai_players[players.index(authorized)].networks[call_type].give_answer(call_type)
+		ai_players[players.index(authorized)].give_answer(call_type, optinputs = inputs)
 		
 
 async def play(gamers):
@@ -427,8 +443,7 @@ async def play(gamers):
 	global lastPresident
 	global lastChancellor
 	global ai_players
-	global public_info
-	public_info = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+	global public
 	players = gamers
 	print("hrac 1 je : " + str(players[0]))
 	l = ()
@@ -464,7 +479,7 @@ async def play(gamers):
 			else:
 				 raise Exception("heh, someone is undefined role")
 		await sendInformation(fascistNumber, hitler, fascists)
-	elif runtpye=="ai_train":
+	elif runtype=="ai_train":
 		for i, player in enumerate(ai_players):
 			if player.party=="liberal":
 				liberals.append(players[i])
@@ -474,23 +489,33 @@ async def play(gamers):
 				hitler = players[i]
 
 	president = players[random.randrange(0, len(players))]
+	
 	if runtype=="discord":
 		await give_role(president, role_president)
+	set_public(1, players.index(president))
 	while(not end):
 		if(len(l) < 3):
 			for i in range(len(discard)):
 				l = l + (discard.pop(),)
 			l = shuffle(l)
-			president, chancellor, chaos = await choseGovernment(president, players, lastPresident, lastChancellor)
-			#pridavam prezidenta a kancla do turn history	
-			turnhis.append(president)
-			turnhis.append(chancellor)
+		set_public(3, players.index(president))
+		try: set_public(4, players.index(chancellor))
+		except ValueError: print("no last chancellor")
+		president, chancellor, chaos = await choseGovernment(president, players, lastPresident, lastChancellor)
+		#pridavam prezidenta a kancla do turn history	
+		turnhis.append(president)
+		turnhis.append(chancellor)
+		setpublic(1, players.index(president))
+		setpublic(2, players.index(chancellor))
 		if(await check(lib, fas, chancellor, roles, players, hitler)):
 			end = True
 			break
 		if(chaos):
 			if(l[0] == 'lib'):
 				lib += 1
+				l = l[1:]
+			elif l[0] == "fas":
+				fas += 1
 				l = l[1:]
 		else:
 			votingLaws = l[:3]
@@ -851,11 +876,13 @@ async def choseChancellor(players, president, lastPresident, lastChancellor):
 async def choseGovernment(president, players, lastPresident, lastChancellor):
 
 	global chancellor
-
+	global runtype
+	global public
 	canceledVotings = 0
 	while(True):
 		chancellor = players[await choseChancellor(players, president, lastPresident, lastChancellor)]
-		await give_role(chancellor, role_chancellor)
+		if runtype=="discord": await give_role(chancellor, role_chancellor)
+		setpublic(2, players.index(chancellor))
 		if(await voting(players, president, chancellor) == True):
 			return president, chancellor, False
 		else:
@@ -928,10 +955,10 @@ async def train():
 
 	l = len(lib_players)
 	for generation in range(0, generation_size_coef * 3 - l):
-		lib_players.append(ai_player("liberal"))
+		lib_players.append(AI_player("liberal"))
 	l = len(fas_players)
 	for generation in range(0, generation_size_coef * 2 - l):
-		fas_players.append(ai_player("fascist"))
+		fas_players.append(AI_player("fascist"))
 
 
 
@@ -973,7 +1000,7 @@ async def train():
 
 
 if runtype == "discord":
-	client.run("")
+	client.run()
 elif runtype == "ai_train":
 	loop = asyncio.get_event_loop()
 	loop.run_until_complete(train())
