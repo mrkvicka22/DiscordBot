@@ -6,9 +6,9 @@ hitlerism = [players]     	-1 CNH, 1 = H
 should vote			-1 nein, 1 ja
 who should i pick/action	bool for each player
 
-objective and public ones:								final num for 5 players is 14 or 34
+objective and public ones:								final num for 5 players is 24 or 44
 only for statements :bool was_fas_pres, chancc, lib pres, lib chancc, 0/1
-bool is_pres, is_chancc
+bool is_pres, is_chancc, last pres, last chancc
 fas_laws =                    	0-1, 0 means 0 fas laws, 1/6 = 1 fas law
 lib_laws =                    	0-1 0 means 0 lib laws, 1/5 = 1 lib law
 TD in 							0.33 per neined gov
