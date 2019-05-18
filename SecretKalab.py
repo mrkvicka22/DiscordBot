@@ -25,6 +25,7 @@ global president
 global chancellor
 global lastPresident
 global lastChancellor
+illegal_action_punishment = -3
 game_in_progress = False
 role_playing = discord.Role
 role_creator = discord.Role
@@ -368,22 +369,25 @@ async def give_role(player, role):
 
 async def send(recepient, content, *texty):
 	global public_channel
-	sent = 0
-	for text in texty:
-		content = str(content) + str(text) + ' '
-	print(str(recepient) + ": ")
-	if recepient == "Everyone":
-		await public_channel.send(content)
-	for channel in kanale:
-		if channel.name == recepient:
-			print(content)
-			await channel.send(content)
-			sent+=1
-	if sent == 0:
-		print("chudak je bez channelu")
+	if runtype == "discord":
+		sent = 0
+		for text in texty:
+			content = str(content) + str(text) + ' '
+		print(str(recepient) + ": ")
+		if recepient == "Everyone":
+			await public_channel.send(content)
+		for channel in kanale:
+			if channel.name == recepient:
+				print(content)
+				await channel.send(content)
+				sent+=1
+		if sent == 0:
+			print("chudak je bez channelu")
+#	elif runtype == "ai_train":
+#		if 
 
 ########################################################################################################################################################
-async def vstup(authorized, call_type = None):
+async def vstup(authorized, call_type = None, inputs = []):
 	global ai_players
 	if runtype=="discord":
 		while True:
@@ -405,6 +409,8 @@ async def play(gamers):
 	global lastPresident
 	global lastChancellor
 	global ai_players
+	global public_info
+	public_info = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 	players = gamers
 	print("hrac 1 je : " + str(players[0]))
 	l = ()
@@ -429,25 +435,35 @@ async def play(gamers):
 	print(players)
 	print(roles)
 	hitler = 0
-	for i, player in enumerate(roles):
-		if(player == 'fas'):
-			fascists.append(players[i])
-		elif(player == 'hit'):
-			hitler = players[i]
-		elif(player == 'lib'):
-			liberals.append(players[i])
-		else:
-			 raise Exception("heh, someone is undefined role")
-	await sendInformation(fascistNumber, hitler, fascists)
+	if runtype == "discord":
+		for i, player in enumerate(roles):
+			if(player == 'fas'):
+				fascists.append(players[i])
+			elif(player == 'hit'):
+				hitler = players[i]
+			elif(player == 'lib'):
+				liberals.append(players[i])
+			else:
+				 raise Exception("heh, someone is undefined role")
+		await sendInformation(fascistNumber, hitler, fascists)
+	elif runtpye=="ai_train":
+		for i, player in enumerate(ai_players):
+			if player.party=="liberal":
+				liberals.append(players[i])
+			elif player.party == "fascist":
+				fascists.append(players[i])
+			elif player.party == "hitler":
+				hitler = players[i]
 
 	president = players[random.randrange(0, len(players))]
-	await give_role(president, role_president)
+	if runtype=="discord":
+		await give_role(president, role_president)
 	while(not end):
 		if(len(l) < 3):
 			for i in range(len(discard)):
 				l = l + (discard.pop(),)
 			l = shuffle(l)
-			president, chancellor, chaos = await choseGovernment(president, players, lastPresident, lastChancellor,)
+			president, chancellor, chaos = await choseGovernment(president, players, lastPresident, lastChancellor)
 			#pridavam prezidenta a kancla do turn history	
 			turnhis.append(president)
 			turnhis.append(chancellor)
@@ -788,13 +804,15 @@ async def voting(players, president, chancellor):
 		return False
 
 async def choseChancellor(players, president, lastPresident, lastChancellor):
+	global ai_players
+	global illegal_action_punishment
 	print(president, ':Who do you want as a chancellor in your government?')
 	await send(president, 'Who do you want as a chancellor in your government?')
 	while(True):
  #	   if commands.empty():
   #		  continue
-		inp = await vstup(president)
-
+		inp = await vstup(president, call_type="choose_chancellor")
+		if runtype == "ai_train": ai_players[players.index(president)].fitness += illegal_action_punishment
 		if(inp == lastPresident):
 			print(president, inp + 'can not be president, because he was president in last govenment.')
 			await send(president, inp + 'can not be president, because he was president in last govenment.')
@@ -805,6 +823,7 @@ async def choseChancellor(players, president, lastPresident, lastChancellor):
 			print(president, ': ', inp, 'you can not be chancellor, you are already president.')
 			await send(president, 'You can not be chancellor, you are already president.')
 		elif(inp in players):
+			if runtype == "ai_train": ai_players[players.index(president)].fitness -= illegal_action_punishment
 			return players.index(inp)
 		else:
 			print(president, ':You have to type the name of that player. ' + inp + ' is not in this list:') 
@@ -936,7 +955,7 @@ async def train():
 
 
 if runtype == "discord":
-	client.run()
+	client.run("")
 elif runtype == "ai_train":
 	loop = asyncio.get_event_loop()
 	loop.run_until_complete(train())
