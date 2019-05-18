@@ -38,39 +38,47 @@ print("importing done")
 class AI_player:
 
     def __init__(self, party):
-        self.npublic = np.zeros(24)
-        self.party = party
+        self.public_inputs = np.zeros(24)
         self.personal_inputs = np.zeros(32)
+
+        self.party = party
         self.networks = {
             "vote":
-                tf.keras.Sequential([
-                    keras.layers.Dense(len(self.personal_inputs) + len(self.npublic), activation=tf.nn.sigmoid),
-                    keras.layers.Dense(11 + 14, activation=tf.nn.sigmoid),
+                keras.Sequential([
+                    keras.layers.Dense(len(self.personal_inputs) + len(self.public_inputs), activation=tf.nn.tanh),
+                    keras.layers.Dense(len(self.personal_inputs) + len(self.public_inputs, activation=tf.nn.tanh),
                     keras.layers.Dense(2, activation=tf.nn.softmax)
                 ]),
             "chancellor_choose":
-                tf.keras.Sequential([
-                    keras.layers.Dense(self.personal_inputs+self.npublic, activation=tf.nn.tanh),
-                    keras.layers.Dense(15 + 4, activation=tf.nn.tanh),
-                    keras.layers.Dense(4, activation=tf.nn.sigmoid)
-                ])
+                keras.Sequential([
+                    keras.layers.Dense(len(self.personal_inputs) + len(self.public_inputs), activation=tf.nn.tanh),
+                    keras.layers.Dense(len(self.personal_inputs) + len(self.public_inputs), activation=tf.nn.tanh),
+                    keras.layers.Dense(4, activation=tf.nn.softmax)
+                ]),
             "gunpoint":
-                tf.keras.Sequential([
-                    keras.layers.Dense(15 + 4, activation=tf.nn.sigmoid),
-                    keras.layers.Dense(15 + 4, activation=tf.nn.sigmoid),
-                    keras.layers.Dense(4, activation=tf.nn.sigmoid)
-                ])
+                keras.Sequential([
+                    keras.layers.Dense(len(self.personal_inputs) + len(self.public_inputs), activation=tf.nn.tanh),
+                    keras.layers.Dense(len(self.personal_inputs) + len(self.public_inputs, activation=tf.nn.tanh),
+                    keras.layers.Dense(4, activation=tf.nn.softmax)
+                ]),
             "lib passing laws":
-                tf.keras.Sequential([
-                    keras.layers.Dense(3, activation=tf.nn.sigmoid),
-                    keras.layers.Dense(1, activation=tf.nn.sigmoid)
-                ])
+                keras.Sequential([
+                    keras.layers.Dense(3 + len(self.public_inputs), activation=tf.nn.tanh),
+                    keras.layers.Dense(8, activation=tf.nn.tanh),
+                    keras.layers.Dense(1, activation=tf.nn.softmax)
+                ]),
             "investigate":
-                tf.keras.Sequential([
-                    keras.layers.Dense(11 +, activation=tf.nn.sigmoid),
-                    keras.layers.Dense(11 + 14, activation=tf.nn.sigmoid),
+                keras.Sequential([
+                    keras.layers.Dense(len(self.personal_inputs) + len(self.public_inputs), activation=tf.nn.tanh),
+                    keras.layers.Dense(len(self.personal_inputs) + len(self.public_inputs, activation=tf.nn.tanh),
+                    keras.layers.Dense(4, activation=tf.nn.softmax)
+                ]),
+            "investigate claim":
+                keras.Sequential([
+                    keras.layers.Dense(len(self.personal_inputs) + len(self.public_inputs) + 1, activation=tf.nn.tanh),
+                    keras.layers.Dense(10, activation=tf.nn.tanh),
                     keras.layers.Dense(2, activation=tf.nn.softmax)
-        }
+        };
 
 
 
