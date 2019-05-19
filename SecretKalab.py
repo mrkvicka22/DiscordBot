@@ -4,6 +4,7 @@ import queue
 import asyncio
 import copy
 import pyperclip
+print("importing TS...")
 import tensorflow as tf
 from tensorflow import keras
 import sys
@@ -63,19 +64,25 @@ class AI_player:
 					keras.layers.Dense(len(self.personal_inputs) + len(public), activation=tf.nn.tanh),
 					keras.layers.Dense(4, activation=tf.nn.softmax)
 				]),
-			"gunpoint":
+			"shoot":
 				keras.Sequential([
 					keras.layers.Dense(len(self.personal_inputs) + len(public), activation=tf.nn.tanh),
 					keras.layers.Dense(len(self.personal_inputs) + len(public), activation=tf.nn.tanh),
 					keras.layers.Dense(4, activation=tf.nn.softmax)
 				]),
-			"lib passing laws":
+			"passing laws":
 				keras.Sequential([
 					keras.layers.Dense(3 + len(public), activation=tf.nn.tanh),
 					keras.layers.Dense(8, activation=tf.nn.tanh),
 					keras.layers.Dense(1, activation=tf.nn.softmax)
 				]),
 			"investigate":
+				keras.Sequential([
+					keras.layers.Dense(len(self.personal_inputs) + len(public), activation=tf.nn.tanh),
+					keras.layers.Dense(len(self.personal_inputs) + len(public), activation=tf.nn.tanh),
+					keras.layers.Dense(4, activation=tf.nn.softmax)
+				]),
+			"special-elect":
 				keras.Sequential([
 					keras.layers.Dense(len(self.personal_inputs) + len(public), activation=tf.nn.tanh),
 					keras.layers.Dense(len(self.personal_inputs) + len(public), activation=tf.nn.tanh),
@@ -107,6 +114,8 @@ class AI_player:
 
 
 	def give_answer(self, event_type, optinputs = np.array([])):
+		print("NN got as input: ")
+		print(np.concatenate((self.personal_inputs, public, optinputs), axis = None))
 		return self.networks[event_type].predict( np.concatenate((self.personal_inputs, public, optinputs), axis = None))
 
 
@@ -433,6 +442,14 @@ async def vstup(authorized, call_type = None, inputs = np.array([])):
 		print(inp)
 		return inp
 	elif runtype=="ai_train":
+		try:
+			for i in np.nditer(inputs):
+				if i == "lib":
+					i=1
+				elif i == "fas":
+					i = -1
+		except ValueError:
+			print("no additional inputs to NN")
 		ai_players[players.index(authorized)].give_answer(call_type, optinputs = inputs)
 		
 
@@ -531,7 +548,7 @@ async def play(gamers):
 
 				try:
 					try:
-						inp = await int(vstup(president))
+						inp = await int(vstup(president, call_type="passing laws", inputs = np.array(votingLaws)))
 					except:
 						send(president, "This was not a number")
 						print("This was not a number")
@@ -557,7 +574,7 @@ async def play(gamers):
 					print(chancellor, ':Choose one you want to discard.')
 					await send(chancellor, 'Choose one you want to discard.')
 					
-					inp = await vstup(chancellor)
+					inp = await vstup(chancellor, call_type="passing laws", inputs = np.array(votingLaws))
 					discard.append(votingLaws[inp - 1])
 					turnhis.append(votingLaws[inp - 1])
 					history.append(dict(zip(turnhiskeys, turnhis)))
@@ -575,7 +592,7 @@ async def play(gamers):
 							while(x):
 								print(president, ':Type the name of player, you want to reveal to you.')
 								await send(president, 'Type the name of player, you want to reveal to you.')
-								inp = await vstup(president)
+								inp = await vstup(president, call_type = "investigate")
 								if(inp in players):
 									x = False
 							print(president, ':', inp, 'is', reveal(fascists, hitler, inp), '.')
@@ -586,7 +603,7 @@ async def play(gamers):
 							while(x):
 								print(president, ':Type the name of player, you want to reveal to you.')
 								await send(president, 'Type the name of player, you want to reveal to you.')
-								inp = await vstup(president)
+								inp = await vstup(president, call_type = "investigate")
 								if(inp in players):
 									x = False
 							print(president, ':', inp, 'is', reveal(fascists, hitler, inp), '.')
@@ -600,7 +617,7 @@ async def play(gamers):
 							while(x):
 								print(president, ':Type the name of player, you want to kill.')
 								await send(president, 'Type the name of player, you want to kill.')
-								inp = await vstup(president)
+								inp = await vstup(president, call_type = "shoot")
 								if(inp in players and not (inp == president)):
 									x = False
 								if(inp == lastPresident):
@@ -622,7 +639,7 @@ async def play(gamers):
 			await send(president, 'Who do you want as a president in special government?')
 			x = True
 			while(x):
-				inp = await vstup(president)
+				inp = await vstup(president, call_type="special-elect")
 				if(inp in players):
 					specialPresident = inp
 					await give_role(specialPresident, role_president)
@@ -645,7 +662,7 @@ async def play(gamers):
 					print(specialPresident, ':Choose one you want to discard.')
 					await send(specialPresident, 'Choose one you want to discard.')
 					try:					
-						inp = await vstup(specialPresident)
+						inp = await vstup(specialPresident, call_type = "passing laws", inputs = np.array(votingLaws))
 						if(inp > 0 and inp < 4):
 							discard.append(votingLaws[inp - 1])
 							votingLaws = votingLaws[:inp-1] + votingLaws[inp:]
@@ -663,7 +680,7 @@ async def play(gamers):
 						await send(chancellor, ','.join(votingLaws))
 						print(chancellor, ':Choose one you want to discard.')
 						await send(chancellor, 'Choose one you want to discard.')
-						inp = await vstup(chancellor)
+						inp = await vstup(chancellor, call_type = "passing laws", inputs = np.array(votingLaws))
 						discard.append(votingLaws[inp - 1])
 						votingLaws = votingLaws[:inp-1] + votingLaws[inp:]
 						if(votingLaws[0] == 'lib'):
@@ -679,7 +696,7 @@ async def play(gamers):
 								while(x):
 									print(specialPresident, ':Type the name of player, you want to kill.')
 									await send(specialPresident, 'Type the name of player, you want to kill.')
-									inp = await vstup(specialPresident)
+									inp = await vstup(specialPresident, call_type = "shoot")
 									if(inp in players and not (inp == specialPresident)):
 										x = False
 								if(inp == president):
@@ -1000,7 +1017,7 @@ async def train():
 
 
 if runtype == "discord":
-	client.run()
+	client.run("")
 elif runtype == "ai_train":
 	loop = asyncio.get_event_loop()
 	loop.run_until_complete(train())
