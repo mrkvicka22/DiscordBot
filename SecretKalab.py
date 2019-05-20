@@ -44,8 +44,7 @@ print("importing done")
 
 
 
-public = np.zeros(24)	#5-isPresident, isChancellor, lastPresident, lastChancellor 
-						#1-fas_laws, lib_laws, TD in x, isHZ
+
 class AI_player:
 	
 	global public
@@ -92,6 +91,18 @@ class AI_player:
 					keras.layers.Dense(len(self.personal_inputs) + len(public), activation=tf.nn.tanh),
 					keras.layers.Dense(4, activation=tf.nn.softmax)
 				]),
+			"public info update":
+				keras.Sequential([
+					keras.layers.Dense((len(self.personal_inputs) + len(public))),
+					keras.layers.Dense(len(self.personal_inputs) + len(public), activation=tf.nn.tanh),
+					keras.layers.Dense(len(self.personal_inputs), activation=tf.nn.tanh)
+				]),
+			"punishment":
+				keras.Sequential([
+					keras.layers.Dense((len(self.personal_inputs) + len(public))),
+					keras.layers.Dense(len(self.personal_inputs) + len(public), activation=tf.nn.tanh),
+					keras.layers.Dense(len(self.personal_inputs), activation=tf.nn.tanh)
+				]),
 			"investigate claim":
 				keras.Sequential([
 					keras.layers.Dense((len(self.personal_inputs) + len(public))),
@@ -118,32 +129,35 @@ class AI_player:
 
 
 	def give_answer(self, event_type, optinputs = np.array([])):
-		print("NN got as input: ")
+
 		inp = np.array([np.concatenate((self.personal_inputs, public, optinputs))])
 		print(event_type)
-		print(inp)
 		#print(inp.shape)
 		raw_out = self.networks[event_type].predict(inp)
 
 		out = []
 		out = raw_out[0].tolist()
-		if self.networks[event_type]=="vote":
+		if event_type=="vote":
 			if out[0] > 0:
 				out = "ja"
 			else:
 				out = "nein"
-		elif self.networks[event_type]=="passing laws":
+		elif event_type=="passing laws":
+			
 			if out[0] > 0:
-				out = optinputs.index("lib")
+				out = optinputs.tolist().index("lib")
 			else:
-				out = optinputs.index("fas")
-		elif self.networks[event_type]=="investigate claim":
+				out = optinputs.rolist().index("fas")
+
+		elif event_type=="investigate claim":
 			if out[0] > 0:
 				out = "lib"
 			else:
 				out = "fas"
+		elif event_type == "public info update" or event_type == "punishment":
+			self.personal_inputs = raw_out[0]
 		else:
-			out = players[out.index(max(out))]
+			out = players[(out.index(max(out))+players.index(self.name) + 1)%len(players)]
 		print("out is: ")
 		print(out)
 		
@@ -439,6 +453,8 @@ def set_public(group, index):
 		public[i+len(players)*group]=0
 		if i == index:
 			public[i+len(players)*group]=1
+	for ai in ai_players:
+		vstup(ai, call_type = "public info update")
 
 async def send(recepient, content, *texty):
 	global public_channel
@@ -473,14 +489,18 @@ async def vstup(authorized, call_type = None, inputs = np.array([])):
 		return inp
 	elif runtype=="ai_train":
 		try:
-			for i in np.nditer(inputs):
-				if i == "lib":
-					i=1
-				elif i == "fas":
-					i = -1
+			for i in range(len(inputs)):
+				if inputs[i] == "lib":
+					inputs[i] = 1
+				elif inputs[i] == "fas":
+					inputs[i] = -1
 		except ValueError:
 			print("no additional inputs to NN")
-		ai_players[players.index(authorized)].give_answer(call_type, optinputs = inputs)
+		try:
+			return ai_players[players.index(authorized)].give_answer(call_type, optinputs = inputs)
+		except:
+			print(players.index(authorized))
+			print(players)
 		
 
 async def play(gamers):
@@ -491,6 +511,13 @@ async def play(gamers):
 	global lastChancellor
 	global ai_players
 	global public
+	global illegal_action_punishment
+	chancellor = None
+	lastPresident = None
+	lastChancellor = None
+	public = np.zeros(24)	#5-isPresident, isChancellor, lastPresident, lastChancellor 
+						#1-fas_laws, lib_laws, TD in x, isHZ
+	
 	players = gamers
 	print("hrac 1 je : " + str(players[0]))
 	l = ()
@@ -568,9 +595,10 @@ async def play(gamers):
 			votingLaws = l[:3]
 			l = l[3:]
 			choosed = False
+			errors = 10
 			while(not choosed):
+
 				print(l)
-				#await send(president, l)
 				print(','.join(votingLaws))
 				await send(president, ','.join(votingLaws))
 				print(president, ':Choose one you want to discard.')
@@ -578,10 +606,16 @@ async def play(gamers):
 
 				try:
 					try:
-						inp = await int(vstup(president, call_type="passing laws", inputs = np.array(votingLaws)))
-					except:
+						inp = int(await vstup(president, call_type="passing laws", inputs = np.array(votingLaws)))
+					except ValueError:
 						send(president, "This was not a number")
 						print("This was not a number")
+						if runtype=="ai_train":
+							ai_players[players.index(president)].fitness += illegal_action_punishment
+							vstup(ai_players[players.index(president)], call_type = "punishment")
+							errors -=1
+							if errors==0:
+								return
 					if(inp > 0 and inp < 4):
 						presdisc = votingLaws[inp - 1]
 						discard.append(presdisc)
@@ -851,10 +885,8 @@ async def getvote():
 	ans=input[0]
 	if (not (input[1] in hlasy)) and (input[1] in players):
 		hlasy.append(input[1])
-		if(ans == 'ja'):
-			return 1
-		elif (ans == 'nein'):
-			return 2
+		if ans.lower() == 'ja' or ans.lower()== "nein":
+			return ans.lower()
 
 async def voting(players, president, chancellor):
 	global lastVoting
@@ -863,29 +895,35 @@ async def voting(players, president, chancellor):
 	global lastPresident
 	global lastChancellor
 	resulty = []
-	for i in hlasy:
-		hlasy.pop(0)
 	ja, nein = 0, 0
-	for i, p in enumerate(players):
-		print(p, 'Do you agree with goverment where the president would be ', president, 'and the chancellor would be', chancellor)
-		await send(p, 'Do you agree with goverment where the president would be ', president, 'and the chancellor would be', chancellor)
-		await send("Everyone", 'Do you agree with goverment where the president would be ', president, 'and the chancellor would be' + chancellor)
+	if runtype == "discord":
+		for i in hlasy:
+			hlasy.pop(0)
 
-	for p in players:
-		resulty.append(await getvote())
+		for i, p in enumerate(players):
+			print(p, 'Do you agree with goverment where the president would be ', president, 'and the chancellor would be', chancellor)
+			await send(p, 'Do you agree with goverment where the president would be ', president, 'and the chancellor would be', chancellor)
+			await send("Everyone", 'Do you agree with goverment where the president would be ', president, 'and the chancellor would be' + chancellor)
+
+		for p in players:
+			resulty.append(await getvote())
+	elif runtype == "ai_train":
+		for ai in players:
+			resulty.append(await vstup(ai, call_type = "vote"))
+
 
 	while len(resulty)<len(players):
 		await sleep(1)
-
 	for i, p in enumerate(players):
-		if resulty[i] == 1:
+		if resulty[i].lower() == "ja":
 			ja += 1
-		else:
+		elif resulty[i].lower()=="nein":
 			nein += 1
+		else:
+			raise Exception("Wrong input, can be 'ja' or 'nein', got " + resulty[i].lower())
 		print("Ja: " + str(ja) + ", Nein: " + str(nein))
 		print("hlasovali: ")
 		print(hlasy)
-
 	if(ja > nein):
 		lastVoting = True
 		return True
@@ -921,7 +959,7 @@ async def choseChancellor(players, president, lastPresident, lastChancellor):
 			await send(president, 'You have to type the name of that player.')
 
 async def choseGovernment(president, players, lastPresident, lastChancellor):
-
+ 
 	global chancellor
 	global runtype
 	global public
@@ -1013,7 +1051,9 @@ async def train():
 		rulette = []
 		used_lib_ai = []
 		used_fas_ai = []
+
 		for cycle in range(generation_size_coef):
+			ai_players = []
 			for libs in range(0, 3):
 				x = random.randrange(0, len(lib_players))
 				ai_players.append(lib_players[x])
@@ -1027,7 +1067,7 @@ async def train():
 			random.shuffle(ai_players)
 			players = [ai.name for ai in ai_players]
 			print(players)
-			await asyncio.wait_for(await play(players))
+			await asyncio.wait_for(play(players), 30)
 		lib_players = used_lib_ai
 		fas_players = used_fas_ai
 		addition = min([player.fitness for player in lib_players])
@@ -1044,11 +1084,11 @@ async def train():
 			dice = random.randrange(0, randmax)/randmax
 			if randmax * mutation_chance < dice:
 				lib_players.mutate(mutation_amplificator)
+		winsound.Beep(2500, 100)
 
 
 if runtype == "discord":
-	client.run()
+	client.run("")
 elif runtype == "ai_train":
-	loop = asyncio.get_event_loop()
-	loop.run_until_complete(train())
+	asyncio.get_event_loop().run_until_complete(train())
 	
