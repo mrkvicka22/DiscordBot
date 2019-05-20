@@ -4,9 +4,8 @@ import queue
 import asyncio
 import copy
 import pyperclip
-print("importing TS...")
-import tensorflow as tf
-from tensorflow import keras
+import winsound
+import string
 import sys
 import _pickle as pickle
 sys.path.append("D:\personal\matko\programovanie")
@@ -35,6 +34,10 @@ history = []
 turnhiskeys = ['president', 'chancellor', 'voting laws', 'president discarded', 'chancellor discarded']		
 turnhis = []
 runtype = "ai_train"
+if runtype == "ai_train":
+	print("importing TS...")
+	import tensorflow as tf
+	from tensorflow import keras
 
 print("importing done")
 
@@ -46,56 +49,57 @@ public = np.zeros(24)	#5-isPresident, isChancellor, lastPresident, lastChancello
 class AI_player:
 	
 	global public
-	def __init__(self, party):
+	def __init__(self, party, name):
 		public = np.zeros(24)
 		self.personal_inputs = np.zeros(32)
 		self.fitness = 0
 		self.party = party
+		self.name = name
 		self.networks = {
 			"vote":
 				keras.Sequential([
-					keras.layers.Flatten(input_shape = (len(self.personal_inputs) + len(public),)),
+					keras.layers.Dense((len(self.personal_inputs) + len(public))),
 					keras.layers.Dense(len(self.personal_inputs) + len(public), activation=tf.nn.tanh),
-					keras.layers.Dense(2, activation=tf.nn.softmax)
+					keras.layers.Dense(1, activation=tf.nn.softmax)
 				]),
 			"choose_chancellor":
 				keras.Sequential([
-					keras.layers.Flatten(input_shape = ([len(self.personal_inputs) + len(public)])),
+					keras.layers.Dense((len(self.personal_inputs) + len(public))),
 					keras.layers.Dense(len(self.personal_inputs) + len(public), activation=tf.nn.tanh),
 					keras.layers.Dense(4, activation=tf.nn.softmax)
 				]),
 			"shoot":
 				keras.Sequential([
-					keras.layers.Flatten(input_shape = (len(self.personal_inputs) + len(public),)),
+					keras.layers.Dense((len(self.personal_inputs) + len(public))),
 					keras.layers.Dense(len(self.personal_inputs) + len(public), activation=tf.nn.tanh),
 					keras.layers.Dense(4, activation=tf.nn.softmax)
 				]),
 			"passing laws":
 				keras.Sequential([
-					keras.layers.Flatten(input_shape = (3 + len(public) + len(self.personal_inputs),)),
-					keras.layers.Dense(8, activation=tf.nn.tanh),
+					keras.layers.Dense((3 + len(self.personal_inputs) + len(public))),
+					keras.layers.Dense(len(self.personal_inputs) + len(public), activation=tf.nn.tanh),
 					keras.layers.Dense(1, activation=tf.nn.softmax)
 				]),
 			"investigate":
 				keras.Sequential([
-					keras.layers.Flatten(input_shape = (len(self.personal_inputs) + len(public),)),
+					keras.layers.Dense((len(self.personal_inputs) + len(public))),
 					keras.layers.Dense(len(self.personal_inputs) + len(public), activation=tf.nn.tanh),
 					keras.layers.Dense(4, activation=tf.nn.softmax)
 				]),
 			"special-elect":
 				keras.Sequential([
-					keras.layers.Flatten(input_shape = (len(self.personal_inputs) + len(public),)),
+					keras.layers.Dense((len(self.personal_inputs) + len(public))),
 					keras.layers.Dense(len(self.personal_inputs) + len(public), activation=tf.nn.tanh),
 					keras.layers.Dense(4, activation=tf.nn.softmax)
 				]),
 			"investigate claim":
 				keras.Sequential([
-					keras.layers.Flatten(input_shape = (len(self.personal_inputs) + len(public),)),
-					keras.layers.Dense(10, activation=tf.nn.tanh),
-					keras.layers.Dense(2, activation=tf.nn.softmax)
+					keras.layers.Dense((len(self.personal_inputs) + len(public))),
+					keras.layers.Dense(len(self.personal_inputs) + len(public), activation=tf.nn.tanh),
+					keras.layers.Dense(1, activation=tf.nn.softmax)
 				])
 		};
-
+		#print(self.networks["choose_chancellor"].input_shape)
 
 
 
@@ -115,8 +119,35 @@ class AI_player:
 
 	def give_answer(self, event_type, optinputs = np.array([])):
 		print("NN got as input: ")
-		print(np.concatenate((self.personal_inputs, public, optinputs)))
-		return self.networks[event_type].predict(np.concatenate((self.personal_inputs, public, optinputs)))
+		inp = np.array([np.concatenate((self.personal_inputs, public, optinputs))])
+		print(event_type)
+		print(inp)
+		#print(inp.shape)
+		raw_out = self.networks[event_type].predict(inp)
+
+		out = []
+		out = raw_out[0].tolist()
+		if self.networks[event_type]=="vote":
+			if out[0] > 0:
+				out = "ja"
+			else:
+				out = "nein"
+		elif self.networks[event_type]=="passing laws":
+			if out[0] > 0:
+				out = optinputs.index("lib")
+			else:
+				out = optinputs.index("fas")
+		elif self.networks[event_type]=="investigate claim":
+			if out[0] > 0:
+				out = "lib"
+			else:
+				out = "fas"
+		else:
+			out = players[out.index(max(out))]
+		print("out is: ")
+		print(out)
+		
+		return out
 
 
 def refresh_kanalov():
@@ -332,7 +363,6 @@ oprotisediaci
 
 '''
 
-
 def create_statement_for(base, code = []):
 	
 	if len(base.pos_subs) == 0:
@@ -522,8 +552,8 @@ async def play(gamers):
 		#pridavam prezidenta a kancla do turn history	
 		turnhis.append(president)
 		turnhis.append(chancellor)
-		setpublic(1, players.index(president))
-		setpublic(2, players.index(chancellor))
+		set_public(1, players.index(president))
+		set_public(2, players.index(chancellor))
 		if(await check(lib, fas, chancellor, roles, players, hitler)):
 			end = True
 			break
@@ -899,7 +929,7 @@ async def choseGovernment(president, players, lastPresident, lastChancellor):
 	while(True):
 		chancellor = players[await choseChancellor(players, president, lastPresident, lastChancellor)]
 		if runtype=="discord": await give_role(chancellor, role_chancellor)
-		setpublic(2, players.index(chancellor))
+		set_public(2, players.index(chancellor))
 		if(await voting(players, president, chancellor) == True):
 			return president, chancellor, False
 		else:
@@ -954,7 +984,7 @@ async def train():
 	lib_players = []
 	fas_players = []
 	randmax = 100000
-	generation_size_coef = 2
+	generation_size_coef = 1
 	generations_planned = 20
 	mutation_chance = 0.2
 	mutation_amplificator = 0.00001
@@ -972,12 +1002,12 @@ async def train():
 
 	l = len(lib_players)
 	for generation in range(0, generation_size_coef * 3 - l):
-		lib_players.append(AI_player("liberal"))
+		lib_players.append(AI_player("liberal", "l" + ''.join(random.choice(string.ascii_lowercase) for i in range(7))))
 	l = len(fas_players)
 	for generation in range(0, generation_size_coef * 2 - l):
-		fas_players.append(AI_player("fascist"))
+		fas_players.append(AI_player("fascist", "f" + ''.join(random.choice(string.ascii_lowercase) for i in range(7))))
 
-
+	winsound.Beep(2500, 500)
 
 	for generation in range(0,generations_planned):
 		rulette = []
@@ -995,9 +1025,9 @@ async def train():
 				used_fas_ai.append(fas_players[x])
 				del fas_players[x]
 			random.shuffle(ai_players)
-			players = [str(ai) for ai in ai_players]
+			players = [ai.name for ai in ai_players]
 			print(players)
-			asyncio.wait_for(await play(players))
+			await asyncio.wait_for(await play(players))
 		lib_players = used_lib_ai
 		fas_players = used_fas_ai
 		addition = min([player.fitness for player in lib_players])
@@ -1017,7 +1047,7 @@ async def train():
 
 
 if runtype == "discord":
-	client.run
+	client.run()
 elif runtype == "ai_train":
 	loop = asyncio.get_event_loop()
 	loop.run_until_complete(train())
