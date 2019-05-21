@@ -116,7 +116,7 @@ class AI_player:
 
 		for network in self.networks:
 			for w in self.networks[network].weights:
-				w = random.randrange(-1000000, 1000001)/1000000
+				w = random.random()
 
 	def mutate(self, amp):
 		weights = []
@@ -124,7 +124,7 @@ class AI_player:
 			for w in self.networks[network].weights:
 				weights.append(w)
 
-		for x in range(0, random.random()*amp*len(weights)):
+		for x in range(0, int(random.random()*amp*len(weights))):
 			weights[random.randrange(0, len(weights))] = weights[random.randrange(0, len(weights))] - 0.001 + 0.001 * random.random()*2
 
 
@@ -1038,6 +1038,8 @@ def kill(players, roles, hitler, name):
 async def train():
 	global ai_players
 	global players
+	global lib_players
+	global fas_players
 	lib_players = []
 	fas_players = []
 	randmax = 100000
@@ -1103,9 +1105,7 @@ async def train():
 			dice = random.randrange(0, randmax)/randmax
 			if mutation_chance < dice:
 				lib_players[-1].mutate(mutation_amplificator)
-		pickle_out = open("liberal_ais.nn","wb")
-		pickle.dump(lib_players, pickle_out)
-		pickle_out.close()
+
 
 
 
@@ -1130,7 +1130,14 @@ async def train():
 
 
 if runtype == "discord":
-	client.run("")
+	client.run(")
 elif runtype == "ai_train":
-	asyncio.get_event_loop().run_until_complete(train())
-	
+	#try:
+		asyncio.get_event_loop().run_until_complete(train())
+	#except:
+		pickle_out = open("liberal_ais.nn","wb")
+		pickle.dump(lib_players, pickle_out)
+		pickle_out.close()
+		pickle_out = open("fasistic_ais.nn","wb")
+		pickle.dump(fas_players, pickle_out)
+		pickle_out.close()
