@@ -3,11 +3,9 @@ import random
 import queue
 import asyncio
 import copy
-import pyperclip
 import winsound
 import string
 import sys
-import _pickle as pickle
 from keras.models import model_from_json
 import os
 sys.path.append("D:\personal\matko\programovanie")
@@ -1086,16 +1084,10 @@ async def train():
     mutation_chance = 0.2
     mutation_amplificator = 0.00001
 
-    # try:
-    #     with open('liberal_ais.nn', 'rb') as input:
-    #         lib_players = pickle.load(input)
-    # except FileNotFoundError:
-    #     print("no libfiles found")
-    # try:
-    #     with open('fascist_ais.nn', 'rb') as input:
-    #         fas_players = pickle.load(input)
-    # except FileNotFoundError:
-    #     print("no fasfiles found")
+    for aip in lib_players:
+        aip.load_models_to_json()
+    for aip in fas_players:
+        aip.load_models_to_json()
 
     l = len(lib_players)
     for generation in range(0, generation_size_coef * 3 - l):
@@ -1166,12 +1158,13 @@ async def train():
 if runtype == "discord":
     client.run('')
 if runtype == "ai_train":
-    # try:
-    asyncio.get_event_loop().run_until_complete(train())
-    # except:
-    pickle_out = open("liberal_ais.nn", "wb")
-    pickle.dump(lib_players, pickle_out)
-    pickle_out.close()
-    pickle_out = open("fasistic_ais.nn", "wb")
-    pickle.dump(fas_players, pickle_out)
-    pickle_out.close()
+    try:
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(train())
+    except:
+        print('error during training')
+
+    for aip in lib_players:
+        aip.save_models_to_json()
+    for aip in fas_players:
+        aip.save_models_to_json()
