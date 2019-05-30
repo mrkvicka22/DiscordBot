@@ -3,7 +3,7 @@ from random import shuffle, randint
 import discord
 from discord.ext import commands
 
-token = 'NTY0NDQxMjAzNTkzMDUyMTgw.XKttpA.hHp8b9GMYrsDmzYIXNoYLNRburw'
+token = ...
 
 bot = commands.Bot(command_prefix='!', status=discord.Status.idle, activity=discord.Game(name='Booting'))
 bot.remove_command('help')
