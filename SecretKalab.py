@@ -6,12 +6,12 @@ import copy
 import winsound
 import string
 import sys
-from enum import Enum
 import os
+
 sys.path.append("D:\personal\matko\programovanie")
 import statement as st
 import numpy as np
-
+from aioconsole import ainput
 client = discord.Client()
 kanale = []
 hraci = []
@@ -125,8 +125,9 @@ class AI_player:
 	def mutate(self, amp):
 		weights = []
 		for network in self.networks:
-			for w in self.networks[network].weights:
-				weights.append(w)
+			weights.append(self.networks[network].get_weights.tolist())
+			#for w in self.networks[network].weights:
+				#weights.append(w)
 
 		for x in range(0, int(random.random() * amp * len(weights))):
 			weights[random.randrange(0, len(weights))] = weights[random.randrange(0, len(
@@ -135,8 +136,11 @@ class AI_player:
 	def give_weights(self):
 		out = []
 		for type in self.networks:
-			out.append(networks[type].weights)
+			out.append(self.networks[type].weights)
+		print(out)
 		return out
+
+
 	def give_answer(self, event_type, optinputs=np.array([])):
 		global random_ai
 		inp = np.array([np.concatenate((self.personal_inputs, public, optinputs))])
@@ -146,7 +150,7 @@ class AI_player:
 			raw_out = self.networks[event_type].predict(inp)
 			out = raw_out[0].tolist()
 		else:
-			out = [random.random(), random.random(), random.random(), random.random()]
+			out = [random.random()-0.5, random.random()-0.5, random.random()-0.5, random.random()-0.5]
 		if event_type == "vote":
 			if out[0] > 0:
 				ret = "ja"
@@ -229,6 +233,7 @@ async def on_ready():
 	running = False
 	ready = True
 	refresh_kanalov()
+	await console_input()
 
 
 @client.event
@@ -241,7 +246,7 @@ async def on_message(message):
 	global president
 	global role_playing
 	global role_creator
-
+	global players
 	delet = True
 	if message.author == client.user:
 		return
@@ -322,7 +327,8 @@ async def on_message(message):
 
 			await message.channel.send("Let the game... begin!")
 			game_in_progress = True
-			await play()
+			players = hraci
+			await play(hraci)
 
 		else:
 			await message.channel.send("Not enough players are joined :(. Looks like you have less than 5 friends.")
@@ -482,10 +488,13 @@ async def give_role(player, role):
 async def set_public(group, index):
 	global players
 	global public
-	for i in range(0, len(players)):
-		public[i + len(players) * group] = 0
-		if i == index:
-			public[i + len(players) * group] = 1
+	if group < 4:
+		for i in range(0, len(players)):
+			public[i + len(players) * group] = 0
+			if i == index:
+				public[i + len(players) * group] = 1
+	else:
+		public[20+group-1] = index
 	for ai in players:
 		await vstup(ai, call_type="public info update")
 
@@ -547,6 +556,11 @@ async def PUNISH(ind):
 			return True
 		return False
 
+async def console_input():
+	while True:
+		inp = await ainput(">>> ")
+		if inp.startswith("pause"):
+			input()
 
 async def play(gamers):
 	global players
@@ -565,7 +579,7 @@ async def play(gamers):
 	public = np.zeros(24)  # 5-isPresident, isChancellor, lastPresident, lastChancellor
 	# 1-fas_laws, lib_laws, TD in x, isHZ
 
-	print("hrac 1 je : " + str(players[0]))
+
 	l = ()
 	discard = []
 	lib, fas = 0, 0
@@ -601,6 +615,7 @@ async def play(gamers):
 		await sendInformation(fascistNumber, hitler, fascists)
 	elif runtype == "ai_train":
 		for i, player in enumerate(ai_players):
+			roles.append(player.party[:3])
 			if player.party == "liberal":
 				liberals.append(players[i])
 			elif player.party == "fascist":
@@ -834,7 +849,7 @@ async def play(gamers):
 				end = True
 		else:
 			president, lastPresident, lastChancellor = nextpresident(players, president, chancellor)
-			if (not (check(lib, fas, chancellor, roles, players, hitler) == 0)):
+			if (not (await check(lib, fas, chancellor, roles, players, hitler) == 0)):
 				end = True
 
 
@@ -1032,11 +1047,11 @@ async def choseGovernment(president, players, lastPresident, lastChancellor):
 	global public
 	canceledVotings = 0
 	while (True):
-		try:
-			chancellor = players[await choseChancellor(players, president, lastPresident, lastChancellor)]
-		except:
-			print("meh")
+		
+		chancellor = players[await choseChancellor(players, president, lastPresident, lastChancellor)]
+		
 		if runtype == "discord": await give_role(chancellor, role_chancellor)
+		print(chancellor)
 		await set_public(2, players.index(chancellor))
 		if (await voting(players, president, chancellor) == True):
 			return president, chancellor, False
@@ -1044,7 +1059,7 @@ async def choseGovernment(president, players, lastPresident, lastChancellor):
 			canceledVotings += 1
 			if (canceledVotings >= 3):
 				return president, chancellor, True
-			choseGoverment(players, (nextpresident(players, president, chancellor))[0], lastPresident, lastChancellor)
+			await choseGovernment(players, (nextpresident(players, president, chancellor))[0], lastPresident, lastChancellor)
 
 
 def nextpresident(players, president, chancellor):
@@ -1131,7 +1146,7 @@ async def train():
 			ai_bases[type].append(AI_player(''.join(random.choice(string.ascii_lowercase) for i in range(16)), team))
 			
 		
-	winsound.Beep(2500, 500)
+
 
 	for generation in range(0, generations_planned):
 		rulette = []
@@ -1167,7 +1182,7 @@ async def train():
 			ai_bases[type] = []
 			for pl in range(0, len(used_ais[type])):
 				parent = used_ais[type][random.choice(rulette)]
-				ai_bases[type].append(AI_player(''.join(random.choice(string.ascii_lowercase) for i in range(16)),parent.party)) 
+				ai_bases[type].append(AI_player(''.join(random.choice(string.ascii_lowercase) for i in range(16)),parent.party, pWeights = parent.give_weights())) 
 
 				ai_bases[type][-1].name = ''.join(random.choice(string.ascii_lowercase) for i in range(16))
 				dice = random.random()
@@ -1175,13 +1190,13 @@ async def train():
 					ai_bases[type][-1].mutate(mutation_amplificator)
 		if ai_bases["fas_players"][0] == ai_bases["fas_players"][1]:
 			print("UZ su rovnake")
-		winsound.Beep(1000, 75)
+		#winsound.Beep(1000, 75)
 
 
-
+#winsound.Beep(2500, 500)
 if runtype == "discord":
 	client.run('')
-if runtype == "ai_train":
+elif runtype == "ai_train":
 #try:
 	loop = asyncio.get_event_loop()
 	loop.run_until_complete(train())
